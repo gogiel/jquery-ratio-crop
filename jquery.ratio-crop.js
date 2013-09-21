@@ -61,11 +61,11 @@
 
                     element
                         .on('mousemove', function (e) {
-                            
+
                             var newTop = e.pageY + pos_y - drg_h,
                                 newLeft = e.pageX + pos_x - drg_w;
-                            
-                            
+
+
                             if (self.isValidLeftPosition(newLeft)) {
                                 element.offset({
                                     left: newLeft
@@ -87,8 +87,15 @@
             height = height || this.height();
             if (!this.settings.noEmpty) return true;
             top -= this.targetOffset.top;
-            
+
             return top <= 0 && this.settings.viewportHeight <= top + height;
+        },
+        fixTop: function(){
+            var newTop, height = this.height();
+            var top = newTop = this.element.offset().top;
+            if(top > 0) newTop = 0;
+            if(this.settings.viewportHeight > top + height) newTop = this.settings.viewportHeight - height;
+            this.element.css('top', newTop);
         },
         isValidLeftPosition: function (left, width) {
             left = left || this.element.offset().left;
@@ -98,9 +105,17 @@
 
             return left <= 0 && this.settings.viewportWidth <= left + width;
         },
+        fixLeft: function(){
+            var newLeft, width = this.width();
+            var left = newLeft = this.element.offset().left; 
+            if(left > 0) newLeft = 0;
+            if(this.settings.viewportWidth > left + width) newLeft = this.settings.viewportWidth - width;
+
+            this.element.css('left', newLeft);
+        },
         enableMouseWheel: function () {
             this.target.mousewheel($.proxy(function (e, delta) {
-                this.element.trigger(delta > 0 ? 'zoom-in' : 'zoom-out')
+                this.element.trigger(delta > 0 ? 'zoom-in' : 'zoom-out', e)
             }, this));
         },
         readSize: function () {
@@ -112,23 +127,48 @@
                 .on('zoom-in', $.proxy(this, 'zoomIn'))
                 .on('zoom-out', $.proxy(this, 'zoomOut'));
         },
-        zoomIn: function () {
+        zoomIn: function (_e, e) {
+            var oldScale = this.scale;
             this.scale *= 1.1;
+            this.repositionViewBox(oldScale, e.screenX, e.screenY);
             this.rescaleImage();
         },
-        zoomOut: function () {
-            if(this.isValidTopPosition(undefined, this.height()/1.1) && this.isValidLeftPosition(undefined, this.width()/1.1) )
-            this.scale /= 1.1;
+        zoomOut: function (_e, e) {
+            var oldScale = this.scale,
+                newScale = oldScale / 1.1;
+
+            if (this.imageWidth * newScale < this.settings.viewportWidth || this.imageHeight * newScale < this.settings.viewportHeight) return;
+            this.scale = newScale;
+            this.repositionViewBox(oldScale, e.screenX, e.screenY);
             this.rescaleImage();
+
         },
-        width: function(){
-            return this.imageWidth * this.scale;    
+        width: function () {
+            return this.imageWidth * this.scale;
         },
-        height: function(){
-            return this.imageHeight * this.scale;    
+        height: function () {
+            return this.imageHeight * this.scale;
         },
         rescaleImage: function () {
             this.element.css({width: this.imageWidth * this.scale, height: this.imageHeight * this.scale});
+            if(!this.isValidTopPosition()) this.fixTop();
+            if(!this.isValidLeftPosition()) this.fixLeft();
+        },
+
+        repositionViewBox: function (originalScale, xScreen, yScreen) {
+            var position = this.element.position(),
+                x = position.left,
+                y = position.top;
+
+            var xImg = (-x + xScreen) / originalScale,
+                yImg = (-y + yScreen) / originalScale,
+                newXImg = (-x + xScreen) / this.scale,
+                newYImg = (-y + yScreen) / this.scale;
+
+            this.element.css({
+                left: x - (xImg - newXImg) * this.scale,
+                top: y - (yImg - newYImg) * this.scale
+            });
         },
 
         handleCall: function (args) {
