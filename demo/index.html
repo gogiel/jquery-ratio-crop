@@ -9,6 +9,8 @@
     <img id="cat-image" src="cat.jpg"/>
 
 <script>
-    $('#cat-image').ratioCrop({ratio: 1});
+    $('#cat-image').load(function(){
+        $(this).ratioCrop({ratio: 1});
+    });
 </script>
 </body>
