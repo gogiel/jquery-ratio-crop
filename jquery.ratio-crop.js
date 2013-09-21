@@ -24,7 +24,7 @@
 
     Plugin.prototype = {
         initialHTML: function () {
-            return '<div class="ratio-crop-box"><div class="ratio-crop-viewport"></div></div>';
+            return '<div class="ratio-crop-box"></div>';
         },
         init: function () {
             this.readSize();
@@ -35,8 +35,7 @@
             this.settings.target.replaceWith(newTarget);
             this.target = newTarget;
             this.targetOffset = this.target.offset();
-            $('.ratio-crop-viewport', newTarget)
-                .css({position: 'absolute'})
+            newTarget
                 .append(image);
             newTarget.css({position: 'relative', width: this.settings.viewportWidth, height: this.settings.viewportHeight, overflow: 'hidden'});
 
@@ -128,12 +127,14 @@
                 .on('zoom-out', $.proxy(this, 'zoomOut'));
         },
         zoomIn: function (_e, e) {
+            e.preventDefault();
             var oldScale = this.scale;
             this.scale *= 1.1;
             this.repositionViewBox(oldScale, e.screenX, e.screenY);
             this.rescaleImage();
         },
         zoomOut: function (_e, e) {
+            e.preventDefault();
             var oldScale = this.scale,
                 newScale = oldScale / 1.1;
 
@@ -159,6 +160,9 @@
             var position = this.element.position(),
                 x = position.left,
                 y = position.top;
+            var offset = this.target.offset();
+            xScreen -= offset.left;
+            yScreen -= offset.top;
 
             var xImg = (-x + xScreen) / originalScale,
                 yImg = (-y + yScreen) / originalScale,
