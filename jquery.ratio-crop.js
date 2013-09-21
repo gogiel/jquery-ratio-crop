@@ -38,29 +38,26 @@
         },
         enableDraggable: function(){
             var element = this.element;
+            
+            var stopDragging = function () {
+                element.removeClass('draggable');
+            };
             element.on("mousedown", function (e) {
-                var $drag;
-                    $drag = $(this).addClass('draggable');
-                var z_idx = $drag.css('z-index'),
+                var $drag = $(this).addClass('draggable'), 
                     drg_h = $drag.outerHeight(),
                     drg_w = $drag.outerWidth(),
                     pos_y = $drag.offset().top + drg_h - e.pageY,
                     pos_x = $drag.offset().left + drg_w - e.pageX;
-                $drag.css('z-index', 1000).parents().on("mousemove.drag", function (e) {
-                    $('.draggable').offset({
+                
+                element.off('mousemove').on("mousemove", function (e) {
+                    element.filter('.draggable').offset({
                         top: e.pageY + pos_y - drg_h,
                         left: e.pageX + pos_x - drg_w
-                    }).on("mouseup.drag", function () {
-                            $(this).removeClass('draggable').css('z-index', z_idx);
-                        });
+                    });
                 });
                 e.preventDefault(); // disable selection
-            }).on("mouseup", function () {
-                        $(this).removeClass('draggable');    
-                });
-            this.target.mouseleave(function(){
-                element.removeClass('draggable');
-            }) 
+            }).on("mouseup",stopDragging );
+            this.target.mouseleave(stopDragging); 
         },
         handleCall: function(args){
             
